@@ -21,9 +21,10 @@ func TLSHello() []byte {
 			},
 			Flags : FlagStart,
 			Lengthv: len(clientHelloPayload)
-		}
+		},
 		Data : clientHelloPayload
 	}
 	_,buf := eap.Encode()
 	print(buf)
+	return buf
 }

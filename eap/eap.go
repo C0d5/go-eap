@@ -21,6 +21,7 @@ const (
 	Peap      EapType = 25
 	MsChapv2  EapType = 26
 	TLV       EapType = 33
+	TLS		  EapType = 13
 )
 
 //Interface that defines the functions common to any type of EAP message.
@@ -35,16 +36,16 @@ type EapPacket interface {
 
 func GetEAPByType(msgType EapType) EapPacket {
 	switch msgType {
-	case Peap:
-		return NewEapPeap()
+	// case Peap:
+	// 	return NewEapPeap()
 	case Identity:
 		return NewEapIdentity()
-	case LegacyNak:
-		return NewEapNak()
-	case MsChapv2:
-		return NewEapMsChapV2()
-	case TLV:
-		return NewEapTLVResult()
+	// case LegacyNak:
+	// 	return NewEapNak()
+	// case MsChapv2:
+	// 	return NewEapMsChapV2()
+	// case TLV:
+	// 	return NewEapTLVResult()
 	}
 
 	return &HeaderEap{}

@@ -23,7 +23,7 @@ func (packet *EapIdentity) Encode() (bool, []byte) {
 
 	packet.header.setLength(uint16(5 + len(packet.identity)))
 
-	ok, buff := packet.header.Encode()
+	ok, buff := packet.header.Encode(int(packet.header.GetLength()))
 
 	if ok {
 		copy(buff[5:], packet.identity)

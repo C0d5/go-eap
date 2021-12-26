@@ -33,9 +33,14 @@ type PacketHeader struct {
 }
 
 func (h *PacketHeader) Encode(buf []byte, dataLen int) []byte {
-	_,buf = h.Outer.Encode()
+	
+	if h.Flags & FlagLength != 0 {
+		_,buf = h.Outer.Encode(dataLen+5)
+	} else {
+		_,buf = h.Outer.Encode(dataLen+1)
+	}
 	buf = append(buf, byte(h.Flags))
-	if h.Flags&FlagLength != 0 {
+	if h.Flags & FlagLength != 0 {
 		buf = append(buf,
 			byte(h.Length>>24),
 			byte(h.Length>>16),

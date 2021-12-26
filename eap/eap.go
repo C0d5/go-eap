@@ -48,7 +48,7 @@ func GetEAPByType(msgType EapType) EapPacket {
 	// 	return NewEapTLVResult()
 	}
 
-	return &HeaderEap{}
+	return nil
 }
 
 type HeaderEap struct {
@@ -62,17 +62,16 @@ type HeaderEap struct {
 //EAP message (code, id, length, type) and returns the encoded result in a slice.
 //1º retval: If success encoding, return true, else false.
 //2º retval: The encoded slice.
-func (packet *HeaderEap) Encode() (bool, []byte) {
+func (packet *HeaderEap) Encode(dataLen int) (bool, []byte) {
 
-	buff := make([]byte, packet.length)
-
-	buff[0] = uint8(packet.code)
-	buff[1] = uint8(packet.id)
-
-	binary.BigEndian.PutUint16(buff[2:], packet.length)
+	packet.length = uint16(packet.EncodedLen() + dataLen)
+	buff := make([]byte, 0)
+	buff = append(buff,byte(packet.code))
+	buff = append(buff,byte(packet.id))
+	buff = append(buff, byte(packet.length>>8), byte(packet.length))
 
 	if packet.code == EAPRequest || packet.code == EAPResponse {
-		buff[4] = uint8(packet.msgType)
+		buff = append(buff,uint8(packet.msgType))
 	}
 
 	return true, buff
@@ -87,7 +86,7 @@ func Decode(buff []byte, req EapPacket) (eapPacket EapPacket) {
 	}
 
 	if len(buff) <= 4 {
-		return &eapHeader
+		return nil
 	}
 
 	eapHeader.setType(EapType(buff[4]))
@@ -113,7 +112,7 @@ func Decode(buff []byte, req EapPacket) (eapPacket EapPacket) {
 		buff = newBuff
 	}
 	if !eapHeader.Decode(buff) || eapHeader.msgType == 0 {
-		return &eapHeader
+		return nil
 	}
 
 	eapPacket = GetEAPByType(eapHeader.msgType)
@@ -178,4 +177,16 @@ func (packet *HeaderEap) setType(msgType EapType) {
 
 func (packet *HeaderEap) setLength(length uint16) {
 	packet.length = length
+}
+
+func (h *HeaderEap) HasType() bool {
+	return h.code == EAPRequest || h.code == EAPResponse
+}
+
+func (h *HeaderEap) EncodedLen() int {
+	l := 4 // code (1 byte) + identifier (1 byte) + length (2 bytes)
+	if h.HasType() {
+		l += 1 // type (1 byte)
+	}
+	return l
 }

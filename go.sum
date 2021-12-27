@@ -1,5 +1,7 @@
-github.com/C0d5/go-tls v0.0.0-20211224171801-9084ac1f0694 h1:0JcWomzH1wNGQLfq96mhSJJDBzomu/o43gLcUGeC1wg=
-github.com/C0d5/go-tls v0.0.0-20211224171801-9084ac1f0694/go.mod h1:QbiRZIiqq9z15MiBr8ApgmbYkwQpYeF9n6UHzMi992g=
+github.com/C0d5/go-tls v0.0.0-20211227053946-2862f0845930 h1:CK7CFGgydXAQPfDTSx7eurIt+BTSjA+uaxvWoH10HwY=
+github.com/C0d5/go-tls v0.0.0-20211227053946-2862f0845930/go.mod h1:QbiRZIiqq9z15MiBr8ApgmbYkwQpYeF9n6UHzMi992g=
+github.com/C0d5/go-tls v0.0.0-20211227061413-20bd45fedfec h1:whecX9+fhitHsqbodo2sNABAN3cj0CLOxNzLUhezoco=
+github.com/C0d5/go-tls v0.0.0-20211227061413-20bd45fedfec/go.mod h1:QbiRZIiqq9z15MiBr8ApgmbYkwQpYeF9n6UHzMi992g=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

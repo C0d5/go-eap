@@ -5,34 +5,7 @@ import (
 	"log"
 )
 
-type EapCode uint8
-type EapType uint8
 
-const (
-	EAPRequest  EapCode = 1
-	EAPResponse EapCode = 2
-	EAPSuccess  EapCode = 3
-	EAPFailure  EapCode = 4
-)
-
-const (
-	Identity  EapType = 1
-	LegacyNak EapType = 3
-	Peap      EapType = 25
-	MsChapv2  EapType = 26
-	TLV       EapType = 33
-	TLS		  EapType = 13
-)
-
-//Interface that defines the functions common to any type of EAP message.
-//Every EAP method should implement this interface.
-type EapPacket interface {
-	Decode(buff []byte) bool
-	Encode() (bool, []byte)
-	GetId() uint8
-	GetCode() EapCode
-	GetType() EapType
-}
 
 func GetEAPByType(msgType EapType) EapPacket {
 	switch msgType {
@@ -51,12 +24,6 @@ func GetEAPByType(msgType EapType) EapPacket {
 	return nil
 }
 
-type HeaderEap struct {
-	code    EapCode
-	id      uint8
-	length  uint16
-	msgType EapType
-}
 
 //This function encodes the attributes of the header of an
 //EAP message (code, id, length, type) and returns the encoded result in a slice.

@@ -1,0 +1,19 @@
+# github.com/C0d5/go-tls v0.0.0-20211227061413-20bd45fedfec
+## explicit; go 1.17
+github.com/C0d5/go-tls/constants
+github.com/C0d5/go-tls/coreUtils
+github.com/C0d5/go-tls/cryptoHelpers
+github.com/C0d5/go-tls/helpers
+github.com/C0d5/go-tls/model
+# github.com/sirupsen/logrus v1.8.1
+## explicit; go 1.13
+github.com/sirupsen/logrus
+# golang.org/x/sys v0.0.0-20191026070338-33540a1f6037
+## explicit; go 1.12
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# layeh.com/radius v0.0.0-20210819152912-ad72663a72ab
+## explicit; go 1.12
+layeh.com/radius
+layeh.com/radius/rfc2865
+layeh.com/radius/rfc2869

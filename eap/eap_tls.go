@@ -2,6 +2,8 @@ package eap
 
 import (
 	"encoding/binary"
+	"context"
+	"crypto/tls"
 	// "log"
 )
 
@@ -94,4 +96,15 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 		p.Data = buff[4:]
 	}
 	return true
+}
+
+
+type clientHandshakeState struct {
+	ctx          context.Context
+	serverHello  *tls.serverHelloMsg
+	hello        *tls.clientHelloMsg
+	suite        *tls.cipherSuite
+	finishedHash tls.finishedHash
+	masterSecret []byte
+	session      *tls.ClientSessionState
 }

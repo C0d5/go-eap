@@ -2,11 +2,8 @@ package eap
 
 import (
 	"encoding/binary"
-	"context"
-	"crypto/tls"
 	// "log"
 )
-
 
 type PacketFlag byte
 
@@ -15,8 +12,6 @@ const (
 	FlagMore   PacketFlag = 1 << 6
 	FlagStart  PacketFlag = 1 << 5
 )
-
-
 
 // 0                   1                   2                   3
 //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -35,14 +30,14 @@ type PacketHeader struct {
 }
 
 func (h *PacketHeader) Encode(buf []byte, dataLen int) []byte {
-	
-	if h.Flags & FlagLength != 0 {
-		_,buf = h.Outer.Encode(dataLen+5)
+
+	if h.Flags&FlagLength != 0 {
+		_, buf = h.Outer.Encode(dataLen + 5)
 	} else {
-		_,buf = h.Outer.Encode(dataLen+1)
+		_, buf = h.Outer.Encode(dataLen + 1)
 	}
 	buf = append(buf, byte(h.Flags))
-	if h.Flags & FlagLength != 0 {
+	if h.Flags&FlagLength != 0 {
 		buf = append(buf,
 			byte(h.Length>>24),
 			byte(h.Length>>16),
@@ -61,20 +56,20 @@ func (h *PacketHeader) EncodedLen() int {
 	return l
 }
 
-// TLS Packet 
+// TLS Packet
 type TLSPacket struct {
 	PacketHeader
 	Data []byte
 }
 
-func (p *TLSPacket) Encode() (bool,[]byte) {
-	buf := make([]byte,0)
+func (p *TLSPacket) Encode() (bool, []byte) {
+	buf := make([]byte, 0)
 	buf = p.PacketHeader.Encode(buf, len(p.Data))
-	return true,append(buf, p.Data...)
+	return true, append(buf, p.Data...)
 }
 
 func (p *TLSPacket) Decode(buff []byte) bool {
-	
+
 	ok := p.PacketHeader.Outer.Decode(buff)
 	if !ok {
 		return false
@@ -82,13 +77,13 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 	if !ok {
 		return false
 	}
-	if  p.PacketHeader.Outer.GetType() != TLS {
+	if p.PacketHeader.Outer.GetType() != TLS {
 		return false
 	}
 	if len(p.Data) < 1 {
 		return false
 	}
-	if p.PacketHeader.Flags & FlagLength != 0 {
+	if p.PacketHeader.Flags&FlagLength != 0 {
 		if len(p.Data) < 4 {
 			return false
 		}
@@ -96,15 +91,4 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 		p.Data = buff[4:]
 	}
 	return true
-}
-
-
-type clientHandshakeState struct {
-	ctx          context.Context
-	serverHello  *tls.serverHelloMsg
-	hello        *tls.clientHelloMsg
-	suite        *tls.cipherSuite
-	finishedHash tls.finishedHash
-	masterSecret []byte
-	session      *tls.ClientSessionState
 }

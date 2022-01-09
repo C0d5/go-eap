@@ -1,17 +1,17 @@
 package eap
 
-import (
-	"github.com/C0d5/go-tls/constants"
-	"github.com/C0d5/go-tls/coreUtils"
-)
+import "github.com/C0d5/go-tls/tls"
 
 type TLSClient struct {
-	tlsVersion      [2]byte
-	messages        []byte
-	clientSeqNumber uint8
-	serverSeqNumber uint8
-	cipherSuite     constants.CipherSuiteInfo
-	securityParams  coreUtils.SecurityParams
+	tlsVersion [2]byte
+	messages   []byte
+	conn       *tls.Conn
+}
+
+func GetTLSClient(config *tls.Config) *TLSClient {
+	return &TLSClient{
+		conn: tls.Client(nil, config),
+	}
 }
 
 type EapCode uint8
@@ -30,7 +30,7 @@ const (
 	Peap      EapType = 25
 	MsChapv2  EapType = 26
 	TLV       EapType = 33
-	TLS		  EapType = 13
+	TLS       EapType = 13
 )
 
 //Interface that defines the functions common to any type of EAP message.

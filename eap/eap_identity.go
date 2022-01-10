@@ -1,13 +1,14 @@
 package eap
 
 type EapIdentity struct {
-	header   HeaderEap
+	header   *HeaderEap
 	identity string
 }
 
 func NewEapIdentity() *EapIdentity {
 
-	header := HeaderEap{
+	header := &HeaderEap{
+		code:    EAPRequest,
 		msgType: Identity,
 	}
 
@@ -16,17 +17,14 @@ func NewEapIdentity() *EapIdentity {
 	}
 
 	return identity
-
 }
 
 func (packet *EapIdentity) Encode() (bool, []byte) {
 
-	packet.header.setLength(uint16(5 + len(packet.identity)))
-
-	ok, buff := packet.header.Encode(int(packet.header.GetLength()))
+	ok, buff := packet.header.Encode(len(packet.identity))
 
 	if ok {
-		copy(buff[5:], packet.identity)
+		copy(buff[packet.header.EncodedLen():], packet.identity)
 	}
 
 	return true, buff

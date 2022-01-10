@@ -157,3 +157,12 @@ func (h *HeaderEap) EncodedLen() int {
 	}
 	return l
 }
+
+func GETHeader(c EapCode, i uint8, l uint16, m EapType) HeaderEap {
+	return HeaderEap{
+		code:    c,
+		id:      i,
+		length:  l,
+		msgType: m,
+	}
+}

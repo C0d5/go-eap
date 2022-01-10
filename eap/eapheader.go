@@ -2,10 +2,9 @@ package eap
 
 import (
 	"encoding/binary"
+	"fmt"
 	"log"
 )
-
-
 
 func GetEAPByType(msgType EapType) EapPacket {
 	switch msgType {
@@ -13,17 +12,16 @@ func GetEAPByType(msgType EapType) EapPacket {
 	// 	return NewEapPeap()
 	case Identity:
 		return NewEapIdentity()
-	// case LegacyNak:
-	// 	return NewEapNak()
-	// case MsChapv2:
-	// 	return NewEapMsChapV2()
-	// case TLV:
-	// 	return NewEapTLVResult()
+		// case LegacyNak:
+		// 	return NewEapNak()
+		// case MsChapv2:
+		// 	return NewEapMsChapV2()
+		// case TLV:
+		// 	return NewEapTLVResult()
 	}
 
 	return nil
 }
-
 
 //This function encodes the attributes of the header of an
 //EAP message (code, id, length, type) and returns the encoded result in a slice.
@@ -32,15 +30,16 @@ func GetEAPByType(msgType EapType) EapPacket {
 func (packet *HeaderEap) Encode(dataLen int) (bool, []byte) {
 
 	packet.length = uint16(packet.EncodedLen() + dataLen)
-	buff := make([]byte, 0)
-	buff = append(buff,byte(packet.code))
-	buff = append(buff,byte(packet.id))
-	buff = append(buff, byte(packet.length>>8), byte(packet.length))
+	buff := make([]byte, packet.length)
+	buff[0] = byte(packet.code)
+	buff[1] = byte(packet.id)
+	buff[2] = byte(packet.length >> 8)
+	buff[3] = byte(packet.length)
 
 	if packet.code == EAPRequest || packet.code == EAPResponse {
-		buff = append(buff,uint8(packet.msgType))
+		buff[4] = uint8(packet.msgType)
 	}
-
+	fmt.Println("buff is : ----------\n  ", buff)
 	return true, buff
 
 }

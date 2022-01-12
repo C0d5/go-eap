@@ -8,7 +8,7 @@ type EapIdentity struct {
 func NewEapIdentity() *EapIdentity {
 
 	header := &HeaderEap{
-		code:    EAPRequest,
+		code:    EAPResponse,
 		msgType: Identity,
 	}
 

@@ -48,6 +48,16 @@ func (h *PacketHeader) Encode(buf []byte, dataLen int) []byte {
 	return buf
 }
 
+func (h *PacketHeader) Decode(buf []byte) bool {
+	ok := h.Outer.Decode(buf)
+	if !ok {
+		return false
+	}
+	i := h.Outer.EncodedLen()
+	h.Flags = PacketFlag(buf[i])
+	return true
+}
+
 func (h *PacketHeader) EncodedLen() int {
 	l := 1 // flag (1 byte)
 	if h.Flags&FlagLength != 0 {
@@ -69,22 +79,16 @@ func (p *TLSPacket) Encode() (bool, []byte) {
 }
 
 func (p *TLSPacket) Decode(buff []byte) bool {
-
-	ok := p.PacketHeader.Outer.Decode(buff)
-	if !ok {
-		return false
-	}
+	ok := p.PacketHeader.Decode(buff)
 	if !ok {
 		return false
 	}
 	if p.PacketHeader.Outer.GetType() != TLS {
 		return false
 	}
-	if len(p.Data) < 1 {
-		return false
-	}
+	buff = buff[p.PacketHeader.Outer.EncodedLen()+1:]
 	if p.PacketHeader.Flags&FlagLength != 0 {
-		if len(p.Data) < 4 {
+		if len(buff) < 4 {
 			return false
 		}
 		p.PacketHeader.Length = binary.BigEndian.Uint32(buff)

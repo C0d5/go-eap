@@ -1,17 +1,26 @@
 package eap
 
-import "github.com/C0d5/go-tls/tls"
+import (
+	"github.com/C0d5/go-tls/tls"
+)
 
 type TLSClient struct {
 	tlsVersion [2]byte
 	messages   []byte
-	conn       *tls.Conn
+	Conn       *tls.Conn
+	Session    *tls.ClientSessionState
+	Hello      *tls.ClientHelloMsg
+	Buf        []byte
 }
 
 func GetTLSClient(config *tls.Config) *TLSClient {
 	return &TLSClient{
-		conn: tls.Client(nil, config),
+		Conn: tls.Client(nil, config),
 	}
+}
+
+func (t *TLSClient) WriteHand(b []byte) {
+	t.Conn.WriteHand(b)
 }
 
 type EapCode uint8

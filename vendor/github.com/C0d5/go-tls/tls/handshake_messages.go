@@ -66,7 +66,7 @@ func readUint24LengthPrefixed(s *cryptobyte.String, out *[]byte) bool {
 	return s.ReadUint24LengthPrefixed((*cryptobyte.String)(out))
 }
 
-type clientHelloMsg struct {
+type ClientHelloMsg struct {
 	raw                              []byte
 	vers                             uint16
 	random                           []byte
@@ -94,7 +94,7 @@ type clientHelloMsg struct {
 	pskBinders                       [][]byte
 }
 
-func (m *clientHelloMsg) Marshal() []byte {
+func (m *ClientHelloMsg) Marshal() []byte {
 	if m.raw != nil {
 		return m.raw
 	}
@@ -300,7 +300,7 @@ func (m *clientHelloMsg) Marshal() []byte {
 	return m.raw
 }
 
-func (m *clientHelloMsg) marshal() []byte {
+func (m *ClientHelloMsg) marshal() []byte {
 	if m.raw != nil {
 		return m.raw
 	}
@@ -509,7 +509,7 @@ func (m *clientHelloMsg) marshal() []byte {
 // marshalWithoutBinders returns the ClientHello through the
 // PreSharedKeyExtension.identities field, according to RFC 8446, Section
 // 4.2.11.2. Note that m.pskBinders must be set to slices of the correct length.
-func (m *clientHelloMsg) marshalWithoutBinders() []byte {
+func (m *ClientHelloMsg) marshalWithoutBinders() []byte {
 	bindersLen := 2 // uint16 length prefix
 	for _, binder := range m.pskBinders {
 		bindersLen += 1 // uint8 length prefix
@@ -523,7 +523,7 @@ func (m *clientHelloMsg) marshalWithoutBinders() []byte {
 // updateBinders updates the m.pskBinders field, if necessary updating the
 // cached marshaled representation. The supplied binders must have the same
 // length as the current m.pskBinders.
-func (m *clientHelloMsg) updateBinders(pskBinders [][]byte) {
+func (m *ClientHelloMsg) updateBinders(pskBinders [][]byte) {
 	if len(pskBinders) != len(m.pskBinders) {
 		panic("tls: internal error: pskBinders length mismatch")
 	}
@@ -550,8 +550,8 @@ func (m *clientHelloMsg) updateBinders(pskBinders [][]byte) {
 	}
 }
 
-func (m *clientHelloMsg) unmarshal(data []byte) bool {
-	*m = clientHelloMsg{raw: data}
+func (m *ClientHelloMsg) unmarshal(data []byte) bool {
+	*m = ClientHelloMsg{raw: data}
 	s := cryptobyte.String(data)
 
 	if !s.Skip(4) || // message type and uint24 length field

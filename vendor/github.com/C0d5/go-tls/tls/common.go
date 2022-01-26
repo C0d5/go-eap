@@ -1168,10 +1168,10 @@ func (chi *ClientHelloInfo) SupportsCertificate(c *Certificate) error {
 		return nil
 	}
 
-	// The only signed key exchange we support is ECDHE.
-	if !supportsECDHE(config, chi.SupportedCurves, chi.SupportedPoints) {
-		return supportsRSAFallback(errors.New("client doesn't support ECDHE, can only use legacy RSA key exchange"))
-	}
+	// // The only signed key exchange we support is ECDHE.
+	// if !supportsECDHE(config, chi.SupportedCurves, chi.SupportedPoints) {
+	// 	return supportsRSAFallback(errors.New("client doesn't support ECDHE, can only use legacy RSA key exchange"))
+	// }
 
 	var ecdsaCipherSuite bool
 	if priv, ok := c.PrivateKey.(crypto.Signer); ok {

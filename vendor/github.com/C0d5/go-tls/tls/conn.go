@@ -113,6 +113,7 @@ type Conn struct {
 	// been called. the rest of the bits are the number of goroutines
 	// in Conn.Write.
 	activeCall int32
+	inBuf      []byte
 
 	tmp [16]byte
 }
@@ -124,6 +125,11 @@ type Conn struct {
 // LocalAddr returns the local network address.
 func (c *Conn) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
+}
+
+// LocalAddr returns the local network address.
+func (c *Conn) GetSendBuf() []byte {
+	return c.sendBuf
 }
 
 // RemoteAddr returns the remote network address.
@@ -903,15 +909,24 @@ func (c *Conn) maxPayloadSizeForWrite(typ recordType) int {
 	return n
 }
 
+func (c *Conn) WriteHand(data []byte) {
+	c.inBuf = data
+}
+
+func (c *Conn) FlushAndWriteHand(data []byte) (int, error) {
+	c.hand.Reset()
+	return c.hand.Write(data)
+}
+
 func (c *Conn) write(data []byte) (int, error) {
 	if c.buffering {
 		c.sendBuf = append(c.sendBuf, data...)
 		return len(data), nil
 	}
 
-	n, err := c.conn.Write(data)
-	c.bytesSent += int64(n)
-	return n, err
+	// n, err := c.conn.Write(data)
+	// c.bytesSent += int64(n)
+	return 0, nil
 }
 
 func (c *Conn) flush() (int, error) {
@@ -919,11 +934,12 @@ func (c *Conn) flush() (int, error) {
 		return 0, nil
 	}
 
-	n, err := c.conn.Write(c.sendBuf)
-	c.bytesSent += int64(n)
-	c.sendBuf = nil
-	c.buffering = false
-	return n, err
+	// // n, err := c.conn.Write(c.sendBuf)
+	// c.bytesSent += int64(n)
+	// c.sendBuf = nil
+	// c.buffering = false
+	// return n, err
+	return 0, nil
 }
 
 // outBufPool pools the record-sized scratch buffers used by writeRecordLocked.
@@ -1002,9 +1018,41 @@ func (c *Conn) writeRecord(typ recordType, data []byte) (int, error) {
 	return c.writeRecordLocked(typ, data)
 }
 
+func (c *Conn) setTLSRecord() error {
+	lb := len(c.inBuf)
+	if lb < 1 {
+		return nil
+	}
+	if c.hand.Len() > 0 {
+		return nil
+	}
+	// i := 0
+	// for c.inBuf[i] != 22 {
+	// 	i++
+	// 	if c.inBuf[i] == 22 {
+	// 		c.inBuf = c.inBuf[i:]
+	// 		lb = lb - i
+	// 		break
+	// 	}
+	// }
+	n := int(c.inBuf[3])<<8 | int(c.inBuf[4])
+	// fmt.Println("TLS HEADER LEN is :", n)
+	// fmt.Println("TLS Buffer Before Flusing  is :", hex.EncodeToString(c.hand.Bytes()))
+	c.FlushAndWriteHand(c.inBuf[5 : 5+n])
+	c.inBuf = c.inBuf[5+n:]
+	// fmt.Println("TLS Buffer  is :", hex.EncodeToString(c.hand.Bytes()))
+	return nil
+}
+
 // readHandshake reads the next handshake message from
 // the record layer.
 func (c *Conn) readHandshake() (interface{}, error) {
+	// fmt.Println("In Read Handshake")
+	ok := c.setTLSRecord()
+	if ok != nil {
+		return nil, nil
+	}
+	// _ = c.hand.Next(5)
 	for c.hand.Len() < 4 {
 		if err := c.readRecord(); err != nil {
 			return nil, err
@@ -1012,7 +1060,9 @@ func (c *Conn) readHandshake() (interface{}, error) {
 	}
 
 	data := c.hand.Bytes()
+	// fmt.Printf("[%v]\n\n", data)
 	n := int(data[1])<<16 | int(data[2])<<8 | int(data[3])
+	// fmt.Printf("[%v]-Len,buff len[%v]\n", n, c.hand.Len())
 	if n > maxHandshake {
 		c.sendAlertLocked(alertInternalError)
 		return nil, c.in.setErrorLocked(fmt.Errorf("tls: handshake message of length %d bytes exceeds maximum of %d bytes", n, maxHandshake))
@@ -1022,13 +1072,15 @@ func (c *Conn) readHandshake() (interface{}, error) {
 			return nil, err
 		}
 	}
+
 	data = c.hand.Next(4 + n)
+	// fmt.Printf("[%v]\n%d\n", data, len(data))
 	var m handshakeMessage
 	switch data[0] {
 	case typeHelloRequest:
 		m = new(helloRequestMsg)
 	case typeClientHello:
-		m = new(clientHelloMsg)
+		m = new(ClientHelloMsg)
 	case typeServerHello:
 		m = new(serverHelloMsg)
 	case typeNewSessionTicket:
@@ -1074,12 +1126,10 @@ func (c *Conn) readHandshake() (interface{}, error) {
 	default:
 		return nil, c.in.setErrorLocked(c.sendAlert(alertUnexpectedMessage))
 	}
-
 	// The handshake message unmarshalers
 	// expect to be able to keep references to data,
 	// so pass in a fresh copy that won't be overwritten.
 	data = append([]byte(nil), data...)
-
 	if !m.unmarshal(data) {
 		return nil, c.in.setErrorLocked(c.sendAlert(alertUnexpectedMessage))
 	}
@@ -1216,8 +1266,6 @@ func (c *Conn) handlePostHandshakeMessage() error {
 	}
 
 	switch msg := msg.(type) {
-	case *newSessionTicketMsgTLS13:
-		return c.handleNewSessionTicket(msg)
 	case *keyUpdateMsg:
 		return c.handleKeyUpdate(msg)
 	default:

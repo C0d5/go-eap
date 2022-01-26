@@ -6,13 +6,25 @@ import (
 	"log"
 )
 
-func (client *TLSClient) SendTLSHello() []byte {
+func (client *TLSClient) MakeTLSHello(id uint8) []byte {
+	// client := tlsclient.MakeTLSClient("localhost","TLS 1.2",false)
+	clientHello, _, err := client.Conn.MakeClientHello()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	return clientHello.Marshal()
+}
+
+func (client *TLSClient) SendTLSHello(id uint8) []byte {
 
 	// client := tlsclient.MakeTLSClient("localhost","TLS 1.2",false)
-	clientHello, _, err := client.conn.MakeClientHello()
+	clientHello, _, err := client.Conn.MakeClientHello()
 	if err != nil {
 		log.Println(err)
 	}
+	client.Hello = clientHello
+	client.Session = client.Conn.GetSession(clientHello)
 	clientHelloPayload := clientHello.Marshal()
 	m := len(clientHelloPayload)
 	outBuf := make([]byte, 5)
@@ -22,74 +34,20 @@ func (client *TLSClient) SendTLSHello() []byte {
 	outBuf[2] = byte(vers)
 	outBuf[3] = byte(m >> 8)
 	outBuf[4] = byte(m)
-	fmt.Println(clientHello)
+	// fmt.Println("Client Hello Payload.", clientHello)
 	outBuf = append(outBuf, clientHelloPayload...)
 	eap := &TLSPacket{
 		PacketHeader: PacketHeader{
-			Outer: HeaderEap{
-				code:    EAPRequest,
-				id:      10,
-				length:  0,
-				msgType: TLS,
-			},
+			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
 			Flags:  FlagLength,
 			Length: uint32(m + 5),
 		},
 		Data: outBuf,
 	}
 	_, buf := eap.Encode()
-	fmt.Println("buffer is :", buf)
+	// fmt.Println("buffer is :", buf)
 	return buf
 }
-
-// func (client *TLSClient) SendTLSClientKeyExchange() []byte {
-
-// 	clientKeyExchange, err := model.MakeClientKeyExchange(client.tlsVersion, client.securityParams.Curve)
-// 	if err != nil {
-// 		log.Error(err)
-// 	}
-// 	client.securityParams.ClientKeyExchangePrivateKey = clientKeyExchange.PrivateKey
-// 	clientKeyExchangePayload := clientKeyExchange.GetClientKeyExchangePayload()
-// 	client.messages = append(client.messages, helpers.IgnoreRecordHeader(clientKeyExchangePayload)...)
-// 	fmt.Println(clientKeyExchange)
-
-// 	clientChangeCipherSpec := model.MakeClientChangeCipherSpec(client.tlsVersion)
-// 	//clientChangeCipherSpec is not a handshake message, so it is not included in the hash input
-
-// 	// TODO maybe move this to MakeClientHandshakeFinished
-// 	data := cryptoHelpers.HashByteArray(client.cipherSuite.HashingAlgorithm, client.messages)
-// 	verifyData := cryptoHelpers.MakeVerifyData(&client.securityParams, data)
-// 	if verifyData == nil {
-// 		log.Error("Could not create VerifyData")
-// 	}
-
-// 	clientHandshakeFinished, err := model.MakeClientHandshakeFinished(client.securityParams.ClientKey, client.securityParams.ClientIV, verifyData, client.tlsVersion, client.clientSeqNumber)
-// 	if err != nil {
-// 		log.Error(err)
-// 	}
-// 	client.clientSeqNumber += 1
-// 	fmt.Println(clientHandshakeFinished)
-
-// 	// Send ClientKeyExchange, ClientChangeCipherSpec, ClientHandshakeFinished on the same tcp connection
-// 	finalPayload := append(clientKeyExchangePayload, clientChangeCipherSpec.GetClientChangeCipherSpecPayload()...)
-// 	finalPayload = append(finalPayload, clientHandshakeFinished.GetClientHandshakeFinishedPayload()...)
-
-// 	eap := &TLSPacket{
-// 		PacketHeader: PacketHeader{
-// 			Outer: HeaderEap{
-// 				code:    EAPRequest,
-// 				id:      client.clientSeqNumber,
-// 				msgType: TLS,
-// 			},
-// 			Flags:  FlagLength,
-// 			Length: uint32(len(finalPayload)),
-// 		},
-// 		Data: finalPayload,
-// 	}
-// 	_, buf := eap.Encode()
-// 	fmt.Println("buffer is :", buf)
-// 	return buf
-// }
 
 func (client *TLSClient) SendTLSEmpty() []byte {
 	// client := tlsclient.MakeTLSClient("localhost","TLS 1.2",false)
@@ -105,6 +63,59 @@ func (client *TLSClient) SendTLSEmpty() []byte {
 		},
 	}
 	_, buf := eap.Encode()
-	fmt.Println("buffer is :", buf)
+	// fmt.Println("buffer is :", buf)
 	return buf
+}
+
+func (client *TLSClient) SendClientCertificate(id uint8, l int) ([]byte, bool) {
+	moreFragment := false
+	ckx := client.Conn.GetSendBuf()
+	flag := FlagNone
+	m := len(ckx)
+	if len(ckx) > l {
+		client.Buf = ckx[l:]
+		ckx = ckx[:l]
+		moreFragment = true
+		flag = FlagLengthMore
+	}
+	fmt.Println("sending Client Key Xchange Payload.")
+	eap := &TLSPacket{
+		PacketHeader: PacketHeader{
+			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
+			Flags:  flag,
+			Length: uint32(m),
+		},
+		Data: ckx,
+	}
+	_, buf := eap.Encode()
+	// fmt.Println("buffer is :", buf)
+	return buf, moreFragment
+}
+
+func (client *TLSClient) SendPendingBuffer(id uint8, l int) ([]byte, bool) {
+	moreFragment := false
+	var ckx []byte
+	flag := FlagNone
+	if len(client.Buf) > l {
+		ckx = ckx[:l]
+		client.Buf = client.Buf[l:]
+		moreFragment = true
+		flag = FlagMore
+	} else {
+		ckx = client.Buf
+		client.Buf = []byte{}
+	}
+	m := len(ckx)
+	fmt.Println("sending More Client Key Xchange Payload.")
+	eap := &TLSPacket{
+		PacketHeader: PacketHeader{
+			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
+			Flags:  flag,
+			Length: uint32(m),
+		},
+		Data: ckx,
+	}
+	_, buf := eap.Encode()
+	// fmt.Println("buffer is :", buf)
+	return buf, moreFragment
 }

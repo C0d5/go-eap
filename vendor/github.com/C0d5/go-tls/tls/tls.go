@@ -31,14 +31,14 @@ import (
 // using conn as the underlying transport.
 // The configuration config must be non-nil and must include
 // at least one certificate or else set GetCertificate.
-func Server(conn net.Conn, config *Config) *Conn {
-	c := &Conn{
-		conn:   conn,
-		config: config,
-	}
-	c.handshakeFn = c.serverHandshake
-	return c
-}
+// func Server(conn net.Conn, config *Config) *Conn {
+// 	c := &Conn{
+// 		conn:   conn,
+// 		config: config,
+// 	}
+// 	c.handshakeFn = c.serverHandshake
+// 	return c
+// }
 
 // Client returns a new TLS client side connection
 // using conn as the underlying transport.
@@ -49,6 +49,7 @@ func Client(conn net.Conn, config *Config) *Conn {
 		conn:     conn,
 		config:   config,
 		isClient: true,
+		vers:     0x0303,
 	}
 	c.handshakeFn = c.clientHandshake
 	return c
@@ -62,13 +63,13 @@ type listener struct {
 
 // Accept waits for and returns the next incoming TLS connection.
 // The returned connection is of type *Conn.
-func (l *listener) Accept() (net.Conn, error) {
-	c, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
-	}
-	return Server(c, l.config), nil
-}
+// func (l *listener) Accept() (net.Conn, error) {
+// 	c, err := l.Listener.Accept()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return Server(c, l.config), nil
+// }
 
 // NewListener creates a Listener which accepts connections from an inner
 // Listener and wraps each connection with Server.

@@ -2,7 +2,6 @@ package eap
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 )
 
@@ -39,7 +38,7 @@ func (packet *HeaderEap) Encode(dataLen int) (bool, []byte) {
 	if packet.code == EAPRequest || packet.code == EAPResponse {
 		buff[4] = uint8(packet.msgType)
 	}
-	fmt.Println("buff is : ----------\n  ", buff)
+	// fmt.Println("buff is : ----------\n  ", buff)
 	return true, buff
 
 }

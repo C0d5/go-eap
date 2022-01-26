@@ -2,15 +2,18 @@ package eap
 
 import (
 	"encoding/binary"
+	"fmt"
 	// "log"
 )
 
 type PacketFlag byte
 
 const (
-	FlagLength PacketFlag = 1 << 7
-	FlagMore   PacketFlag = 1 << 6
-	FlagStart  PacketFlag = 1 << 5
+	FlagLength     PacketFlag = 1 << 7
+	FlagMore       PacketFlag = 1 << 6
+	FlagStart      PacketFlag = 1 << 5
+	FlagNone       PacketFlag = 0
+	FlagLengthMore PacketFlag = 0xc0
 )
 
 // 0                   1                   2                   3
@@ -29,21 +32,23 @@ type PacketHeader struct {
 	Length uint32
 }
 
-func (h *PacketHeader) Encode(buf []byte, dataLen int) []byte {
-
+func (h *PacketHeader) Encode(dataLen int) []byte {
+	l := 0
 	if h.Flags&FlagLength != 0 {
-		_, buf = h.Outer.Encode(dataLen + 5)
+		l = 5
 	} else {
-		_, buf = h.Outer.Encode(dataLen + 1)
+		l++
 	}
-	buf = append(buf, byte(h.Flags))
+	_, buf := h.Outer.Encode(dataLen + l)
+	l = h.Outer.EncodedLen()
+	// fmt.Printf("PACKET HEADER: %d", h.Flags)
+	buf[l] = byte(h.Flags)
 	if h.Flags&FlagLength != 0 {
-		buf = append(buf,
-			byte(h.Length>>24),
-			byte(h.Length>>16),
-			byte(h.Length>>8),
-			byte(h.Length),
-		)
+		// fmt.Printf("PACKET HEADER: Adding Length")
+		buf[l+1] = byte(h.Length >> 24)
+		buf[l+2] = byte(h.Length >> 16)
+		buf[l+3] = byte(h.Length >> 8)
+		buf[l+4] = byte(h.Length)
 	}
 	return buf
 }
@@ -66,6 +71,10 @@ func (h *PacketHeader) EncodedLen() int {
 	return l
 }
 
+func (h *PacketHeader) Len() int {
+	return h.EncodedLen() + h.Outer.EncodedLen()
+}
+
 // TLS Packet
 type TLSPacket struct {
 	PacketHeader
@@ -73,12 +82,13 @@ type TLSPacket struct {
 }
 
 func (p *TLSPacket) Encode() (bool, []byte) {
-	buf := make([]byte, 0)
-	buf = p.PacketHeader.Encode(buf, len(p.Data))
-	return true, append(buf, p.Data...)
+	buff := p.PacketHeader.Encode(len(p.Data))
+	copy(buff[p.PacketHeader.Len():], p.Data)
+	return true, buff
 }
 
 func (p *TLSPacket) Decode(buff []byte) bool {
+	fmt.Println("In TLS PACKET DECODE !!")
 	ok := p.PacketHeader.Decode(buff)
 	if !ok {
 		return false

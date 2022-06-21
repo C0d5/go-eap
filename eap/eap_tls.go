@@ -27,7 +27,6 @@ const (
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 type PacketHeader struct {
-	Outer  HeaderEap
 	Flags  PacketFlag
 	Length uint32
 }
@@ -39,26 +38,20 @@ func (h *PacketHeader) Encode(dataLen int) []byte {
 	} else {
 		l++
 	}
-	_, buf := h.Outer.Encode(dataLen + l)
-	l = h.Outer.EncodedLen()
+  buff := make([]byte,dataLen+l)
 	// fmt.Printf("PACKET HEADER: %d", h.Flags)
-	buf[l] = byte(h.Flags)
+	buf[0] = byte(h.Flags)
 	if h.Flags&FlagLength != 0 {
 		// fmt.Printf("PACKET HEADER: Adding Length")
-		buf[l+1] = byte(h.Length >> 24)
-		buf[l+2] = byte(h.Length >> 16)
-		buf[l+3] = byte(h.Length >> 8)
-		buf[l+4] = byte(h.Length)
+		buf[1] = byte(h.Length >> 24)
+		buf[2] = byte(h.Length >> 16)
+		buf[3] = byte(h.Length >> 8)
+		buf[4] = byte(h.Length)
 	}
 	return buf
 }
 
 func (h *PacketHeader) Decode(buf []byte) bool {
-	ok := h.Outer.Decode(buf)
-	if !ok {
-		return false
-	}
-	i := h.Outer.EncodedLen()
 	h.Flags = PacketFlag(buf[i])
 	return true
 }
@@ -71,10 +64,6 @@ func (h *PacketHeader) EncodedLen() int {
 	return l
 }
 
-func (h *PacketHeader) Len() int {
-	return h.EncodedLen() + h.Outer.EncodedLen()
-}
-
 // TLS Packet
 type TLSPacket struct {
 	PacketHeader
@@ -83,7 +72,7 @@ type TLSPacket struct {
 
 func (p *TLSPacket) Encode() (bool, []byte) {
 	buff := p.PacketHeader.Encode(len(p.Data))
-	copy(buff[p.PacketHeader.Len():], p.Data)
+	copy(buff[p.PacketHeader.EncodedLen():], p.Data)
 	return true, buff
 }
 
@@ -93,10 +82,7 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 	if !ok {
 		return false
 	}
-	if p.PacketHeader.Outer.GetType() != TLS {
-		return false
-	}
-	buff = buff[p.PacketHeader.Outer.EncodedLen()+1:]
+	buff = buff[1:]
 	if p.PacketHeader.Flags&FlagLength != 0 {
 		if len(buff) < 4 {
 			return false

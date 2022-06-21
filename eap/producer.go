@@ -6,6 +6,18 @@ import (
 	"log"
 )
 
+func (client *TLSClient) MakeEapIdentity(id uint8, identity string) []byte {
+	eap := &EapPacket{
+		code: EAPResponse, id: id, length: 0, msgType: Identity,
+		Payload: &EapIdentity{
+			identity: identity,
+		},
+	}
+	_, buf := eap.Encode()
+	// fmt.Println("buffer is :", buf)
+	return buf
+}
+
 func (client *TLSClient) MakeTLSHello(id uint8) []byte {
 	// client := tlsclient.MakeTLSClient("localhost","TLS 1.2",false)
 	clientHello, _, err := client.Conn.MakeClientHello()
@@ -36,13 +48,15 @@ func (client *TLSClient) SendTLSHello(id uint8) []byte {
 	outBuf[4] = byte(m)
 	// fmt.Println("Client Hello Payload.", clientHello)
 	outBuf = append(outBuf, clientHelloPayload...)
-	eap := &TLSPacket{
-		PacketHeader: PacketHeader{
-			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
-			Flags:  FlagLength,
-			Length: uint32(m + 5),
+	eap := &EapPacket{
+		code: EAPResponse, id: id, length: 0, msgType: TLS,
+		Payload: &TLSPacket{
+			PacketHeader: PacketHeader{
+				Flags:  FlagLength,
+				Length: uint32(m + 5),
+			},
+			Data: outBuf,
 		},
-		Data: outBuf,
 	}
 	_, buf := eap.Encode()
 	// fmt.Println("buffer is :", buf)
@@ -52,14 +66,12 @@ func (client *TLSClient) SendTLSHello(id uint8) []byte {
 func (client *TLSClient) SendTLSEmpty() []byte {
 	// client := tlsclient.MakeTLSClient("localhost","TLS 1.2",false)
 	fmt.Println("Empty Response")
-	eap := &TLSPacket{
-		PacketHeader: PacketHeader{
-			Outer: HeaderEap{
-				code:    EAPResponse,
-				id:      10,
-				msgType: TLS,
+	eap := &EapPacket{
+		code: EAPResponse, id: 10, msgType: TLS,
+		Payload: &TLSPacket{
+			PacketHeader: PacketHeader{
+				Flags: FlagLength,
 			},
-			Flags: FlagLength,
 		},
 	}
 	_, buf := eap.Encode()
@@ -79,13 +91,15 @@ func (client *TLSClient) SendClientCertificate(id uint8, l int) ([]byte, bool) {
 		flag = FlagLengthMore
 	}
 	fmt.Println("sending Client Key Xchange Payload.")
-	eap := &TLSPacket{
-		PacketHeader: PacketHeader{
-			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
-			Flags:  flag,
-			Length: uint32(m),
+	eap := &EapPacket{
+		code: EAPResponse, id: id, msgType: TLS,
+		Payload: &TLSPacket{
+			PacketHeader: PacketHeader{
+				Flags:  flag,
+				Length: uint32(m),
+			},
+			Data: ckx,
 		},
-		Data: ckx,
 	}
 	_, buf := eap.Encode()
 	// fmt.Println("buffer is :", buf)
@@ -107,13 +121,15 @@ func (client *TLSClient) SendPendingBuffer(id uint8, l int) ([]byte, bool) {
 	}
 	m := len(ckx)
 	fmt.Println("sending More Client Key Xchange Payload.")
-	eap := &TLSPacket{
-		PacketHeader: PacketHeader{
-			Outer:  GETHeader(EAPResponse, id, uint16(0), TLS),
-			Flags:  flag,
-			Length: uint32(m),
+	eap := &EapPacket{
+		code: EAPResponse, id: id, msgType: TLS,
+		Payload: &TLSPacket{
+			PacketHeader: PacketHeader{
+				Flags:  flag,
+				Length: uint32(m),
+			},
+			Data: ckx,
 		},
-		Data: ckx,
 	}
 	_, buf := eap.Encode()
 	// fmt.Println("buffer is :", buf)

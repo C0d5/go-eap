@@ -1,6 +1,5 @@
 package eap
 
-func (h *HeaderEap)Dispatcher() {
-	
+func (p *EapPacket) Dispatcher() {
 
 }

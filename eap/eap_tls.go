@@ -93,6 +93,9 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 	return true
 }
 
-func (p *TLSPacket) String() {
-	fmt.Printf("%v", p)
+func (p *TLSPacket) String() string {
+	if (p.Flags != FlagStart) && p.Data == nil {
+		return ""
+	}
+	return fmt.Sprintf("TLS Header: %v, Data: %v", p.PacketHeader, p.Data)
 }

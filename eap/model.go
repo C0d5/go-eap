@@ -47,7 +47,7 @@ const (
 type EapPayload interface {
 	Decode(buff []byte) bool
 	Encode() (bool, []byte)
-	String()
+	String() string
 }
 
 type EapPacket struct {

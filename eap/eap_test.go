@@ -14,8 +14,9 @@ func TestEAPIdentity(t *testing.T) {
 	}
 	e.Decode(data)
 	fmt.Printf("value is:  %v\n", e)
-	e.Payload.String()
-	t.Error()
+	if e.Payload.String() == "" {
+		t.Error("Decode issue ", e.Payload.String())
+	}
 }
 
 func TestEAPTLS(t *testing.T) {
@@ -27,6 +28,7 @@ func TestEAPTLS(t *testing.T) {
 	fmt.Printf("data: {%v}\n", data)
 	e.Decode(data)
 	fmt.Printf("value is:  %v\n", e)
-	e.Payload.String()
-	t.Error()
+	if e.Payload.String() == "" {
+		t.Error("Decode issue ", e.Payload.String())
+	}
 }

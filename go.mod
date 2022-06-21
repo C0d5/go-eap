@@ -3,8 +3,7 @@ module github.com/C0d5/go-eap
 go 1.17
 
 require (
-	github.com/C0d5/go-tls v0.0.0-20220109093803-1fda905ab9bb
-	github.com/sirupsen/logrus v1.8.1
+	github.com/C0d5/go-tls v0.0.0-20220126131807-4ea3ae091459
 	layeh.com/radius v0.0.0-20210819152912-ad72663a72ab
 )
 

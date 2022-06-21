@@ -38,7 +38,7 @@ func (h *PacketHeader) Encode(dataLen int) []byte {
 	} else {
 		l++
 	}
-  buff := make([]byte,dataLen+l)
+	buf := make([]byte, dataLen+l)
 	// fmt.Printf("PACKET HEADER: %d", h.Flags)
 	buf[0] = byte(h.Flags)
 	if h.Flags&FlagLength != 0 {
@@ -52,7 +52,7 @@ func (h *PacketHeader) Encode(dataLen int) []byte {
 }
 
 func (h *PacketHeader) Decode(buf []byte) bool {
-	h.Flags = PacketFlag(buf[i])
+	h.Flags = PacketFlag(buf[0])
 	return true
 }
 
@@ -91,4 +91,8 @@ func (p *TLSPacket) Decode(buff []byte) bool {
 		p.Data = buff[4:]
 	}
 	return true
+}
+
+func (p *TLSPacket) String() {
+	fmt.Printf("%v", p)
 }

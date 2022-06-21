@@ -1,12 +1,14 @@
 package eap
 
+import "fmt"
+
 type EapIdentity struct {
 	identity string
 }
 
 func NewEapIdentity() *EapIdentity {
 	identity := &EapIdentity{
-		identity: header,
+		identity: "",
 	}
 
 	return identity
@@ -27,4 +29,8 @@ func (packet *EapIdentity) GetIdentity() string {
 
 func (packet *EapIdentity) SetIdentity(value string) {
 	packet.identity = value
+}
+
+func (packet *EapIdentity) String() {
+	fmt.Printf("%v", packet)
 }

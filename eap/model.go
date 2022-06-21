@@ -42,10 +42,18 @@ const (
 	TLS       EapType = 13
 )
 
+//Interface that defines the functions common to any type of EAP message.
+//Every EAP method should implement this interface.
+type EapPayload interface {
+	Decode(buff []byte) bool
+	Encode() (bool, []byte)
+	String()
+}
 
 type EapPacket struct {
 	code    EapCode
 	id      uint8
 	length  uint16
 	msgType EapType
+	Payload EapPayload
 }
